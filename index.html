@@ -410,6 +410,13 @@
                     <label>Intervalle de vérification (secondes)</label>
                     <input type="number" id="check_interval" value="30" min="5" max="3600">
                 </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; cursor: pointer;">
+                        <input type="checkbox" id="auto_start" style="width: auto; margin-right: 10px;">
+                        <span>🚀 Démarrage automatique de la surveillance (survit à la fermeture du navigateur)</span>
+                    </label>
+                    <p class="info-text">⚠️ Activez ceci pour que le bot tourne 24/7 sur le serveur, même si vous fermez votre navigateur</p>
+                </div>
             </div>
 
             <button class="btn btn-primary" onclick="saveConfig()">💾 Enregistrer la configuration</button>
@@ -564,7 +571,8 @@
                 ollama_url: document.getElementById('ollama_url').value,
                 custom_context: document.getElementById('custom_context').value,
                 keyword: document.getElementById('keyword').value,
-                check_interval: parseInt(document.getElementById('check_interval').value)
+                check_interval: parseInt(document.getElementById('check_interval').value),
+                auto_start: document.getElementById('auto_start').checked
             };
         }
 
@@ -581,6 +589,7 @@
             document.getElementById('custom_context').value = config.custom_context || '';
             document.getElementById('keyword').value = config.keyword || '[IA]';
             document.getElementById('check_interval').value = config.check_interval || 30;
+            document.getElementById('auto_start').checked = config.auto_start || false;
             updateModels();
         }
 
