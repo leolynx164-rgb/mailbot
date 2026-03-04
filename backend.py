@@ -130,8 +130,9 @@ Réponds uniquement avec le contenu de l'email, sans formule de signature (elle 
         return None
 
 def generate_gemini(api_key, model, prompt):
-    """Générer avec Gemini"""
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:streamGenerateContent?alt=sse&key={api_key}"
+    """Générer avec Gemini/Gemma"""
+    # Utiliser generateContent (non-streaming) qui est plus stable
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={api_key}"
     
     data = {
         "contents": [{
@@ -142,49 +143,69 @@ def generate_gemini(api_key, model, prompt):
     }
     
     try:
-        response = requests.post(url, json=data, timeout=30, stream=True)
-        response.raise_for_status()
+        response = requests.post(url, json=data, timeout=30)
         
-        # Parser la réponse SSE (Server-Sent Events)
-        full_text = ""
-        for line in response.iter_lines():
-            if line:
-                line_str = line.decode('utf-8')
-                if line_str.startswith('data: '):
-                    json_str = line_str[6:]  # Enlever 'data: '
-                    if json_str.strip() == '[DONE]':
-                        break
-                    try:
-                        chunk = json.loads(json_str)
-                        # Log du chunk pour debug
-                        log_message(f"Chunk reçu: {json.dumps(chunk, ensure_ascii=False)[:200]}", "DEBUG")
-                        
-                        if 'candidates' in chunk and len(chunk['candidates']) > 0:
-                            candidate = chunk['candidates'][0]
-                            if 'content' in candidate and 'parts' in candidate['content']:
-                                text = candidate['content']['parts'][0].get('text', '')
-                                full_text += text
-                            else:
-                                log_message(f"Structure inattendue dans candidate: {candidate}", "WARNING")
-                        elif 'error' in chunk:
-                            log_message(f"Erreur API Gemini: {chunk['error']}", "ERROR")
-                            return None
-                    except json.JSONDecodeError as e:
-                        log_message(f"Erreur décodage JSON: {e} - Ligne: {json_str[:100]}", "WARNING")
-                        continue
+        # Log du status code
+        log_message(f"API Response Status: {response.status_code}", "DEBUG")
         
-        if full_text:
-            log_message(f"Texte généré complet: {len(full_text)} caractères", "DEBUG")
-            return full_text
-        else:
-            log_message("Aucun texte généré par Gemini", "ERROR")
+        # Si erreur HTTP
+        if response.status_code != 200:
+            error_text = response.text[:500]
+            log_message(f"Erreur HTTP {response.status_code}: {error_text}", "ERROR")
+            return None
+        
+        result = response.json()
+        
+        # Log de la structure de réponse
+        log_message(f"Structure réponse: {json.dumps(result, ensure_ascii=False)[:300]}", "DEBUG")
+        
+        # Vérifier la structure de la réponse
+        if 'candidates' not in result:
+            log_message(f"Pas de 'candidates' dans la réponse: {result}", "ERROR")
             return None
             
-    except requests.exceptions.HTTPError as e:
-        log_message(f"Erreur HTTP {e.response.status_code}: {e.response.text[:500]}", "ERROR")
+        if len(result['candidates']) == 0:
+            log_message("Liste 'candidates' vide", "ERROR")
+            return None
+        
+        candidate = result['candidates'][0]
+        
+        # Vérifier 'content'
+        if 'content' not in candidate:
+            log_message(f"Pas de 'content' dans candidate: {candidate}", "ERROR")
+            return None
+        
+        content = candidate['content']
+        
+        # Vérifier 'parts'
+        if 'parts' not in content:
+            log_message(f"Pas de 'parts' dans content: {content}", "ERROR")
+            return None
+        
+        if len(content['parts']) == 0:
+            log_message("Liste 'parts' vide", "ERROR")
+            return None
+        
+        # Extraire le texte
+        text = content['parts'][0].get('text', '')
+        
+        if not text:
+            log_message("Texte vide dans la réponse", "ERROR")
+            return None
+        
+        log_message(f"Texte généré: {len(text)} caractères", "DEBUG")
+        return text
+            
+    except requests.exceptions.RequestException as e:
+        log_message(f"Erreur requête HTTP: {str(e)}", "ERROR")
+        return None
+    except json.JSONDecodeError as e:
+        log_message(f"Erreur décodage JSON: {str(e)}", "ERROR")
         return None
     except Exception as e:
-        log_message(f"Erreur generate_gemini: {type(e).__name__} - {str(e)}", "ERROR")
+        log_message(f"Erreur inattendue: {type(e).__name__} - {str(e)}", "ERROR")
+        import traceback
+        log_message(f"Traceback: {traceback.format_exc()}", "DEBUG")
         return None
 
 def generate_openai(api_key, model, prompt):
