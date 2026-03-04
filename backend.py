@@ -141,27 +141,51 @@ def generate_gemini(api_key, model, prompt):
         }]
     }
     
-    response = requests.post(url, json=data, timeout=30, stream=True)
-    response.raise_for_status()
-    
-    # Parser la réponse SSE (Server-Sent Events)
-    full_text = ""
-    for line in response.iter_lines():
-        if line:
-            line_str = line.decode('utf-8')
-            if line_str.startswith('data: '):
-                json_str = line_str[6:]  # Enlever 'data: '
-                if json_str.strip() == '[DONE]':
-                    break
-                try:
-                    chunk = json.loads(json_str)
-                    if 'candidates' in chunk and len(chunk['candidates']) > 0:
-                        text = chunk['candidates'][0]['content']['parts'][0].get('text', '')
-                        full_text += text
-                except json.JSONDecodeError:
-                    continue
-    
-    return full_text if full_text else None
+    try:
+        response = requests.post(url, json=data, timeout=30, stream=True)
+        response.raise_for_status()
+        
+        # Parser la réponse SSE (Server-Sent Events)
+        full_text = ""
+        for line in response.iter_lines():
+            if line:
+                line_str = line.decode('utf-8')
+                if line_str.startswith('data: '):
+                    json_str = line_str[6:]  # Enlever 'data: '
+                    if json_str.strip() == '[DONE]':
+                        break
+                    try:
+                        chunk = json.loads(json_str)
+                        # Log du chunk pour debug
+                        log_message(f"Chunk reçu: {json.dumps(chunk, ensure_ascii=False)[:200]}", "DEBUG")
+                        
+                        if 'candidates' in chunk and len(chunk['candidates']) > 0:
+                            candidate = chunk['candidates'][0]
+                            if 'content' in candidate and 'parts' in candidate['content']:
+                                text = candidate['content']['parts'][0].get('text', '')
+                                full_text += text
+                            else:
+                                log_message(f"Structure inattendue dans candidate: {candidate}", "WARNING")
+                        elif 'error' in chunk:
+                            log_message(f"Erreur API Gemini: {chunk['error']}", "ERROR")
+                            return None
+                    except json.JSONDecodeError as e:
+                        log_message(f"Erreur décodage JSON: {e} - Ligne: {json_str[:100]}", "WARNING")
+                        continue
+        
+        if full_text:
+            log_message(f"Texte généré complet: {len(full_text)} caractères", "DEBUG")
+            return full_text
+        else:
+            log_message("Aucun texte généré par Gemini", "ERROR")
+            return None
+            
+    except requests.exceptions.HTTPError as e:
+        log_message(f"Erreur HTTP {e.response.status_code}: {e.response.text[:500]}", "ERROR")
+        return None
+    except Exception as e:
+        log_message(f"Erreur generate_gemini: {type(e).__name__} - {str(e)}", "ERROR")
+        return None
 
 def generate_openai(api_key, model, prompt):
     """Générer avec OpenAI"""
