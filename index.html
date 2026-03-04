@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🤖 Email AI Auto-Responder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-dark: #5568d3;
+            --secondary: #764ba2;
+            --success: #10b981;
+            --error: #ef4444;
+            --warning: #f59e0b;
+            --bg-dark: #1a1a2e;
+            --bg-medium: #16213e;
+            --bg-light: #0f3460;
+            --text-primary: #e4e4e7;
+            --text-secondary: #a1a1aa;
+            --border: #27272a;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--bg-dark) 0%, var(--bg-medium) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--bg-light);
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: var(--bg-medium);
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 15px;
+            background: transparent;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .tab:hover {
+            background: var(--bg-light);
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            font-weight: bold;
+        }
+
+        .tab-content {
+            display: none;
+            background: var(--bg-light);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-primary);
+            font-weight: 500;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-medium);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        textarea {
+            min-height: 150px;
+            resize: vertical;
+            font-family: inherit;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: var(--error);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .control-panel {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: var(--bg-medium);
+            padding: 20px;
+            border-radius: 10px;
+            border-left: 4px solid var(--primary);
+        }
+
+        .stat-card h3 {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--text-primary);
+        }
+
+        .log-container {
+            background: var(--bg-dark);
+            border-radius: 10px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px;
+            border-radius: 4px;
+        }
+
+        .log-entry.INFO {
+            color: #60a5fa;
+        }
+
+        .log-entry.SUCCESS {
+            color: var(--success);
+        }
+
+        .log-entry.ERROR {
+            color: var(--error);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .log-entry.WARNING {
+            color: var(--warning);
+        }
+
+        .section {
+            background: var(--bg-medium);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        .section h2 {
+            margin-bottom: 15px;
+            color: var(--text-primary);
+            font-size: 1.3rem;
+        }
+
+        .info-text {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-top: 5px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-running {
+            background: var(--success);
+            box-shadow: 0 0 10px var(--success);
+        }
+
+        .status-stopped {
+            background: var(--error);
+        }
+
+        .row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .control-panel {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🤖 Email AI Auto-Responder</h1>
+            <p class="subtitle">Surveillance IMAP et réponse automatique via IA</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('config')">⚙️ Configuration</button>
+            <button class="tab" onclick="switchTab('monitoring')">📊 Surveillance</button>
+            <button class="tab" onclick="switchTab('context')">📝 Contexte IA</button>
+        </div>
+
+        <!-- Onglet Configuration -->
+        <div id="config" class="tab-content active">
+            <div class="row">
+                <div class="section">
+                    <h2>📥 Configuration IMAP</h2>
+                    <div class="form-group">
+                        <label>Serveur IMAP</label>
+                        <input type="text" id="imap_server" placeholder="imap.gmail.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Port IMAP</label>
+                        <input type="number" id="imap_port" value="993">
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h2>📤 Configuration SMTP</h2>
+                    <div class="form-group">
+                        <label>Serveur SMTP</label>
+                        <input type="text" id="smtp_server" placeholder="smtp.gmail.com">
+                    </div>
+                    <div class="form-group">
+                        <label>Port SMTP</label>
+                        <input type="number" id="smtp_port" value="587">
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>✉️ Compte Email</h2>
+                <div class="form-group">
+                    <label>Adresse email</label>
+                    <input type="email" id="email_address" placeholder="votre.email@gmail.com">
+                </div>
+                <div class="form-group">
+                    <label>Mot de passe</label>
+                    <input type="password" id="email_password" placeholder="Mot de passe d'application">
+                    <p class="info-text">⚠️ Utilisez un mot de passe d'application (Gmail: https://myaccount.google.com/security)</p>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>🤖 Configuration IA</h2>
+                <div class="form-group">
+                    <label>Provider IA</label>
+                    <select id="ai_provider" onchange="updateModels()">
+                        <option value="gemini">Gemini (Google)</option>
+                        <option value="openai">OpenAI (ChatGPT)</option>
+                        <option value="anthropic">Anthropic (Claude)</option>
+                        <option value="ollama">Ollama (Local)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Clé API</label>
+                    <input type="password" id="api_key" placeholder="Votre clé API">
+                    <p class="info-text" id="api_key_info">Gemini: https://makersuite.google.com/app/apikey</p>
+                </div>
+                <div class="form-group">
+                    <label>Modèle IA</label>
+                    <select id="ai_model"></select>
+                    <p class="info-text" id="model_info"></p>
+                </div>
+                <div class="form-group" id="ollama_url_group" style="display: none;">
+                    <label>URL Ollama</label>
+                    <input type="text" id="ollama_url" value="http://localhost:11434">
+                </div>
+                <button class="btn btn-primary" onclick="testIA()">🧪 Tester la connexion IA</button>
+            </div>
+
+            <div class="section">
+                <h2>⚡ Paramètres</h2>
+                <div class="form-group">
+                    <label>Mot-clé dans l'objet</label>
+                    <input type="text" id="keyword" value="[IA]">
+                </div>
+                <div class="form-group">
+                    <label>Intervalle de vérification (secondes)</label>
+                    <input type="number" id="check_interval" value="30" min="5" max="3600">
+                </div>
+            </div>
+
+            <button class="btn btn-primary" onclick="saveConfig()">💾 Enregistrer la configuration</button>
+        </div>
+
+        <!-- Onglet Surveillance -->
+        <div id="monitoring" class="tab-content">
+            <div class="control-panel">
+                <button class="btn btn-success" id="startBtn" onclick="startMonitoring()">▶️ Démarrer la surveillance</button>
+                <button class="btn btn-danger" id="stopBtn" onclick="stopMonitoring()" disabled>⏹ Arrêter</button>
+            </div>
+
+            <div class="section">
+                <h2>
+                    <span class="status-indicator" id="statusIndicator"></span>
+                    📈 Statistiques
+                </h2>
+                <div class="stats">
+                    <div class="stat-card">
+                        <h3>⏱️ Temps écoulé</h3>
+                        <div class="value" id="elapsed">00:00:00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>📬 Emails scannés</h3>
+                        <div class="value" id="scanned">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>✅ Réponses envoyées</h3>
+                        <div class="value" id="responded">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>❌ Erreurs</h3>
+                        <div class="value" id="errors">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>📋 Journal d'activité</h2>
+                <div class="log-container" id="logContainer"></div>
+            </div>
+        </div>
+
+        <!-- Onglet Contexte IA -->
+        <div id="context" class="tab-content">
+            <div class="section">
+                <h2>📝 Contexte personnalisé pour l'IA</h2>
+                <p class="info-text">Ce texte sera utilisé pour guider l'IA dans la génération des réponses aux emails.</p>
+                <div class="form-group">
+                    <textarea id="custom_context" placeholder="Exemple:&#10;Tu es l'assistant virtuel de l'entreprise TechCorp...&#10;&#10;Ton rôle:&#10;- Répondre poliment et professionnellement&#10;- Proposer un rendez-vous si pertinent"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="saveConfig()">💾 Enregistrer le contexte</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        const models = {
+            gemini: [
+                'gemini-1.5-flash',
+                'gemini-1.5-flash-8b',
+                'gemini-1.5-pro',
+                'gemini-2.0-flash-exp',
+                'gemini-2.5-flash',
+                'gemini-exp-1206',
+                'gemma-3-4b',
+                'gemma-3-12b',
+                'gemma-3-27b'
+            ],
+            openai: [
+                'gpt-4o-mini',
+                'gpt-4o',
+                'gpt-4-turbo',
+                'gpt-3.5-turbo'
+            ],
+            anthropic: [
+                'claude-3-5-haiku-20241022',
+                'claude-3-5-sonnet-20241022',
+                'claude-3-opus-20240229'
+            ],
+            ollama: [
+                'llama3.2',
+                'llama3.1',
+                'mistral',
+                'gemma2',
+                'qwen2.5',
+                'phi3'
+            ]
+        };
+
+        const modelInfo = {
+            gemini: 'Modèles Google AI - Gratuit : 1500 req/jour',
+            openai: 'Modèles OpenAI - Payant (~0.03€/email)',
+            anthropic: 'Modèles Anthropic - Payant (~0.02€/email)',
+            ollama: 'Modèles locaux - 100% gratuit et privé'
+        };
+
+        const apiKeyInfo = {
+            gemini: 'Gemini: https://makersuite.google.com/app/apikey',
+            openai: 'OpenAI: https://platform.openai.com/api-keys',
+            anthropic: 'Anthropic: https://console.anthropic.com/settings/keys',
+            ollama: 'Ollama ne nécessite pas de clé API'
+        };
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        function updateModels() {
+            const provider = document.getElementById('ai_provider').value;
+            const modelSelect = document.getElementById('ai_model');
+            const ollamaGroup = document.getElementById('ollama_url_group');
+            const apiKeyInfo = document.getElementById('api_key_info');
+            const modelInfoText = document.getElementById('model_info');
+            
+            modelSelect.innerHTML = '';
+            models[provider].forEach(model => {
+                const option = document.createElement('option');
+                option.value = model;
+                option.textContent = model;
+                modelSelect.appendChild(option);
+            });
+            
+            ollamaGroup.style.display = provider === 'ollama' ? 'block' : 'none';
+            apiKeyInfo.textContent = {
+                gemini: 'Gemini: https://makersuite.google.com/app/apikey',
+                openai: 'OpenAI: https://platform.openai.com/api-keys',
+                anthropic: 'Anthropic: https://console.anthropic.com/settings/keys',
+                ollama: 'Ollama ne nécessite pas de clé API'
+            }[provider];
+            
+            modelInfoText.textContent = modelInfo[provider];
+        }
+
+        function getConfig() {
+            return {
+                imap_server: document.getElementById('imap_server').value,
+                imap_port: parseInt(document.getElementById('imap_port').value),
+                smtp_server: document.getElementById('smtp_server').value,
+                smtp_port: parseInt(document.getElementById('smtp_port').value),
+                email_address: document.getElementById('email_address').value,
+                email_password: document.getElementById('email_password').value,
+                ai_provider: document.getElementById('ai_provider').value,
+                api_key: document.getElementById('api_key').value,
+                ai_model: document.getElementById('ai_model').value,
+                ollama_url: document.getElementById('ollama_url').value,
+                custom_context: document.getElementById('custom_context').value,
+                keyword: document.getElementById('keyword').value,
+                check_interval: parseInt(document.getElementById('check_interval').value)
+            };
+        }
+
+        function setConfig(config) {
+            document.getElementById('imap_server').value = config.imap_server || '';
+            document.getElementById('imap_port').value = config.imap_port || 993;
+            document.getElementById('smtp_server').value = config.smtp_server || '';
+            document.getElementById('smtp_port').value = config.smtp_port || 587;
+            document.getElementById('email_address').value = config.email_address || '';
+            document.getElementById('ai_provider').value = config.ai_provider || 'gemini';
+            document.getElementById('api_key').value = config.api_key || '';
+            document.getElementById('ai_model').value = config.ai_model || 'gemini-1.5-flash';
+            document.getElementById('ollama_url').value = config.ollama_url || 'http://localhost:11434';
+            document.getElementById('custom_context').value = config.custom_context || '';
+            document.getElementById('keyword').value = config.keyword || '[IA]';
+            document.getElementById('check_interval').value = config.check_interval || 30;
+            updateModels();
+        }
+
+        async function saveConfig() {
+            const config = getConfig();
+            try {
+                const response = await fetch(`${API_URL}/config`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                
+                if (response.ok) {
+                    alert('✅ Configuration enregistrée avec succès !');
+                } else {
+                    alert('❌ Erreur lors de la sauvegarde');
+                }
+            } catch (error) {
+                alert('❌ Erreur de connexion au serveur: ' + error.message);
+            }
+        }
+
+        async function loadConfig() {
+            try {
+                const response = await fetch(`${API_URL}/config`);
+                if (response.ok) {
+                    const config = await response.json();
+                    setConfig(config);
+                }
+            } catch (error) {
+                console.error('Erreur chargement config:', error);
+            }
+        }
+
+        async function startMonitoring() {
+            await saveConfig();
+            
+            try {
+                const response = await fetch(`${API_URL}/start`, { method: 'POST' });
+                if (response.ok) {
+                    document.getElementById('startBtn').disabled = true;
+                    document.getElementById('stopBtn').disabled = false;
+                    document.getElementById('statusIndicator').className = 'status-indicator status-running';
+                } else {
+                    alert('❌ Erreur lors du démarrage');
+                }
+            } catch (error) {
+                alert('❌ Erreur de connexion: ' + error.message);
+            }
+        }
+
+        async function stopMonitoring() {
+            try {
+                const response = await fetch(`${API_URL}/stop`, { method: 'POST' });
+                if (response.ok) {
+                    document.getElementById('startBtn').disabled = false;
+                    document.getElementById('stopBtn').disabled = true;
+                    document.getElementById('statusIndicator').className = 'status-indicator status-stopped';
+                }
+            } catch (error) {
+                alert('❌ Erreur de connexion: ' + error.message);
+            }
+        }
+
+        async function updateStatus() {
+            try {
+                const response = await fetch(`${API_URL}/status`);
+                if (response.ok) {
+                    const status = await response.json();
+                    
+                    // Mettre à jour les stats
+                    document.getElementById('scanned').textContent = status.stats.emails_scanned;
+                    document.getElementById('responded').textContent = status.stats.emails_responded;
+                    document.getElementById('errors').textContent = status.stats.errors;
+                    
+                    // Mettre à jour le temps écoulé
+                    if (status.stats.start_time) {
+                        const start = new Date(status.stats.start_time);
+                        const elapsed = Math.floor((Date.now() - start.getTime()) / 1000);
+                        const hours = Math.floor(elapsed / 3600);
+                        const minutes = Math.floor((elapsed % 3600) / 60);
+                        const seconds = elapsed % 60;
+                        document.getElementById('elapsed').textContent = 
+                            `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+                    }
+                    
+                    // Mettre à jour les logs
+                    const logContainer = document.getElementById('logContainer');
+                    logContainer.innerHTML = status.logs.map(log => 
+                        `<div class="log-entry ${log.level}">[${log.timestamp}] [${log.level}] ${log.message}</div>`
+                    ).join('');
+                    logContainer.scrollTop = logContainer.scrollHeight;
+                    
+                    // Mettre à jour l'indicateur de statut
+                    document.getElementById('statusIndicator').className = 
+                        `status-indicator ${status.running ? 'status-running' : 'status-stopped'}`;
+                }
+            } catch (error) {
+                console.error('Erreur mise à jour statut:', error);
+            }
+        }
+
+        async function testIA() {
+            const config = {
+                provider: document.getElementById('ai_provider').value,
+                api_key: document.getElementById('api_key').value,
+                model: document.getElementById('ai_model').value,
+                ollama_url: document.getElementById('ollama_url').value
+            };
+            
+            try {
+                const response = await fetch(`${API_URL}/test-ia`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('✅ Test réussi !\n\nRéponse de l\'IA:\n' + result.response);
+                } else {
+                    alert('❌ Test échoué:\n' + result.error);
+                }
+            } catch (error) {
+                alert('❌ Erreur de connexion: ' + error.message);
+            }
+        }
+
+        // Initialisation
+        updateModels();
+        loadConfig();
+        setInterval(updateStatus, 1000);
+    </script>
+</body>
+</html>

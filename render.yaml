@@ -1,0 +1,6 @@
+services:
+  - type: web
+    name: email-ai-bot
+    env: python
+    buildCommand: pip install -r requirements_web.txt
+    startCommand: python backend.py
